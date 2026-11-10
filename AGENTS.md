@@ -1,4 +1,4 @@
-# AGENTS.md — 政大吃什麼（NCCU Eats）
+# AGENTS.md — NCCU Eats
 
 > 這份文件是給 AI 協作者（Claude、ChatGPT、Codex、Gemini…）看的專案說明書。
 > **在新增或修改任何檔案之前，請先完整讀完這份文件。** 這裡的規則優先於你自己的習慣。
@@ -7,7 +7,7 @@
 
 ## 1. 專案目的
 
-「政大吃什麼」是一個整理**國立政治大學（台北市文山區）周邊美食**的靜態網站，給政大學生、新生與來訪的人查詢。
+「NCCU Eats」是一個整理**國立政治大學（台北市文山區）周邊美食**的靜態網站，給政大學生、新生與來訪的人查詢。
 
 - 讀者：政大學生，特別是剛入學、還不熟環境的新生。
 - 核心問題：「下課了，在政大附近要吃什麼？」
@@ -24,7 +24,7 @@
 | 部署 | GitHub Pages，來源設定為 `main` 分支的 `/docs` 資料夾 |
 | 外部資源 | 只允許 Google Fonts（Noto Sans TC、Noto Serif TC） |
 
-## 3. 目錄結構
+## 3. 目錄結構與編譯路徑規範
 
 ```
 nccu-eats/
@@ -32,7 +32,7 @@ nccu-eats/
 ├── CLAUDE.md              ← 只寫一行，指向 AGENTS.md
 ├── README.md              ← 給人看的簡介與使用方式
 ├── build.py               ← 驗證 + 產生網站的腳本
-├── content/               ← ✏️ 所有內容都只寫在這裡
+├── content/               ← ✏️ 所有內容都只寫在這裡（純 Markdown，無 HTML/CSS）
 │   ├── restaurants/       ← 一間店 = 一個 .md 檔
 │   └── guides/            ← 一篇主題指南 = 一個 .md 檔
 ├── templates/             ← 新增內容時複製的空白範本
@@ -41,10 +41,10 @@ nccu-eats/
 ├── assets/                ← 共用樣式與腳本
 │   ├── style.css
 │   └── app.js
-└── docs/                  ← ⚠️ build.py 自動產生，禁止手動編輯
+└── docs/                  ← ⚠️ 唯讀！所有編譯/發布後的 HTML 都輸出於此，禁止手動編輯
 ```
 
-**最重要的一條：只改 `content/`、`templates/`、`assets/`、`build.py`。`docs/` 永遠由 `build.py` 重新產生。**
+**最重要的一條：你只能修改 `content/`、`templates/`、`assets/`、`build.py`。`docs/` 內的 HTML 與資源，嚴禁手動新增、修改或複製。它必須 100% 由 `build.py` 重新編譯產生。**
 
 ## 4. 命名規則
 
@@ -104,10 +104,16 @@ nccu-eats/
   `build.py` 會自動把它換成帶店名的連結；寫錯 slug 會報錯。
 - front matter 的 `restaurants` 清單必須包含內文所有 `[[...]]` 用到的店。
 
-## 7. 支援的 Markdown 語法
+## 7. 支援的 Markdown 語法與 HTML 風格限制
 
-`build.py` 內建一個精簡的 Markdown 轉換器，**只支援**以下語法，請勿使用其他語法（表格、圖片、程式碼區塊都不支援）：
+為了維持全站視覺風格的一致性，並防範安全隱患，我們的建置腳本 `build.py` **僅支援**以下精簡的 Markdown 語法。若在 Markdown 中寫入 HTML 標籤（如 `<div>` 或 `<span>`），建置時 `build.py` 將會報錯並拒絕生成網站。
 
+**⚠️ 禁止行為：**
+- **絕對禁止**在 Markdown 內容中直接嵌入 `<div class="...">`、`<p>`、`<span>` 等任何原生 HTML 標籤。
+- **絕對禁止**自行引入外部 CSS 框架（如 Tailwind, Bootstrap）或撰寫 inline style。
+- 全站的 HTML 結構與 Class 命名習慣（如 `.card`, `.badge`, `.prose`）完全由 `build.py` 和 `assets/style.css` 集中控制。AI 的職責是「純內容提供」，不需且不應參與 HTML 風格設計。
+
+**允許的 Markdown 語法：**
 - `## 標題`、`### 小標題`
 - 一般段落（段落之間空一行）
 - `- 清單項目`
@@ -148,20 +154,20 @@ nccu-eats/
 - 新增分類時，要同時在 `style.css` 新增對應的 `--cat-新分類` 顏色（亮色與暗色模式都要）。
 - 版面必須在手機寬度（375px）正常顯示，不可出現橫向捲軸。
 
-## 11. 標準工作流程
+## 11. 標準工作流程 (新增頁面 SOP)
 
 ### 新增一間店
 
-1. `python build.py new restaurant <slug>` —— 會從 `templates/restaurant.md` 複製出新檔並填好 slug 與日期。
-2. 填寫 front matter 所有欄位與三個固定段落。
-3. 執行 `python build.py`，確認沒有錯誤。
-4. 如果適合，把這間店加進相關的指南（更新該指南的 `restaurants` 與內文）。
+1. **初始化檔案**：執行 `python build.py new restaurant <slug>` —— 腳本會從 `templates/restaurant.md` 自動複製出新檔並填好 slug 與日期，放置於 `content/restaurants/<slug>.md`。**（嚴禁手動在 docs/ 底下建立 HTML 檔）**
+2. **撰寫內容**：填寫該檔案 front matter 所有欄位與三個固定段落（必須遵循第 7 節的 Markdown 限制，不寫任何 HTML 標籤）。
+3. **驗證與編譯**：執行 `python build.py`。腳本會自動進行格式驗證，並在成功後，將編譯好的頁面輸出至 `docs/restaurants/<slug>.html`。
+4. **關聯指南**：如果適合，把這間店加進相關的指南（更新該指南的 `restaurants` 與內文）。
 
 ### 新增一篇指南
 
-1. `python build.py new guide <slug>`。
-2. 在 `restaurants` 列出要用到的店；若店還不存在，**先建立店家頁**再寫指南。
-3. 執行 `python build.py`。
+1. **初始化檔案**：執行 `python build.py new guide <slug>`，檔案將建立在 `content/guides/<slug>.md`。
+2. **編輯內容**：在 `restaurants` 列出要用到的店；若店還不存在，**必須先完成該店家的「新增一間店」SOP** 之後再寫指南。
+3. **驗證與編譯**：執行 `python build.py`。編譯後的檔案將自動輸出至 `docs/guides/<slug>.html`。
 
 ### 新增分類或區域
 
@@ -171,18 +177,20 @@ nccu-eats/
 
 ## 12. 禁止事項
 
-- ❌ 手動修改 `docs/` 裡的任何檔案
+- ❌ 手動修改或新增 `docs/` 裡的任何 HTML / CSS 檔案
+- ❌ 繞過 `content/` 資料夾直接去拼湊靜態網頁
+- ❌ 在 Markdown 中嵌入任何原生 HTML 標籤或 inline style
 - ❌ 新增 front matter 規格以外的欄位（需要新欄位時，先更新本文件與 `build.py`）
 - ❌ 刪除既有店家檔案
 - ❌ 引入外部 JS / CSS 框架或需要安裝的套件
-- ❌ 在內容中放入未經確認的營業資訊、照片或整段轉貼的文章
+- ❌ 在內容中放入未經確認的營業資訊、照片 or 轉貼文章
 
 ## 13. 完成前檢查清單
 
 每次修改完，回覆使用者之前請逐項確認：
 
 - [ ] `python build.py` 執行成功，沒有 `ERROR`
-- [ ] 新檔案的檔名與 `slug` 一致，且只用小寫英文、數字、`-`
+- [ ] 新檔案的檔名與 `slug` 一致，且只用小寫英文、數字與 `-`
 - [ ] `category`、`area`、`price` 都是允許的值
 - [ ] `summary` 不超過 30 字
 - [ ] 店家頁有「為什麼推薦／必點／小提醒」三段
